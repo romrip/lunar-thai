@@ -265,7 +265,7 @@ with col_d:
 with col_m:
     selected_month = st.selectbox("เดือน", range(1, 13), index=0, format_func=lambda x: month_names[x-1]) 
 with col_y:
-    selected_year_be = st.selectbox("ปีเกิด (พ.ศ.)", range(2469, 2570), index=(2527-2469)) 
+    selected_year_be = st.selectbox("ปีเกิด (พ.ศ.)", range(2469, 2570), index=(2530-2469)) 
 
 # สร้างโครงสร้างเก็บวันที่แบบไม่ต้องเช็คอธิกสุรทินล่วงหน้า เพื่อส่งเข้าฟังก์ชันของคุณ
 ThaiDate = namedtuple("ThaiDate", ["year", "month", "day"])
@@ -295,7 +295,7 @@ if st.button("ประมวลผลธาตุเจ้าเรือน", 
             with col1:
                 st.info(f"**วันเกิดทางจันทรคติ:**\n\n{thai_text_display}")
             with col2:
-                st.success(f"**ธาตุเจ้าเรือนกำเนิด:**\n\n{element}\n\n*(คิดจาก {phase_str} {day_str} ค่ำ เดือน {calc_month})*")
+                st.success(f"**ธาตุเจ้าเรือน:**\n\n{element}*")
                 
     except ValueError:
         # จะแจ้งเตือนตรงนี้ถ้าผู้ใช้จงใจเลือกวันที่ไม่มีจริง (เช่น 31 ก.พ.)
