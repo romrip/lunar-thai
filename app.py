@@ -268,59 +268,98 @@ def get_utu_samutthan(lunar_month: int, phase_str: str):
 # ==========================================
 st.set_page_config(page_title="คำนวณธาตุเจ้าเรือน", page_icon="🌿")
 
-st.title("โปรแกรมคำนวณธาตุเจ้าเรือน")
-st.write("ระบบแปลงวันเกิดเป็นปฏิทินจันทรคติไทย")
+st.title("🌿 โปรแกรมคำนวณธาตุเจ้าเรือนและอุตุสมุฏฐาน")
+st.write("ระบบแปลงวันเกิดและวันที่เกิดโรคเป็นปฏิทินจันทรคติไทย")
 
 month_names = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", 
                "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"]
 
-col_d, col_m, col_y = st.columns(3)
-with col_d:
-    selected_day = st.selectbox("วันที่", range(1, 32), index=0) 
-with col_m:
-    selected_month = st.selectbox("เดือน", range(1, 13), index=0, format_func=lambda x: month_names[x-1]) 
-with col_y:
-    selected_year_be = st.selectbox("ปีเกิด (พ.ศ.)", range(2469, 2570), index=(2530-2469)) 
+# ดึงวันที่ปัจจุบัน สำหรับตั้งเป็นค่าเริ่มต้นของวันที่เกิดโรค
+today = datetime.today()
+cur_d = today.day
+cur_m = today.month
+cur_y_be = today.year + 543
+
+st.divider()
+
+# ==========================================
+# ส่วนที่ 1: ข้อมูลวันเกิด (สำหรับคำนวณธาตุเจ้าเรือน)
+# ==========================================
+st.subheader("1. ข้อมูลวันเกิด (เพื่อหาธาตุเจ้าเรือนกำเนิด)")
+col_bd, col_bm, col_by = st.columns(3)
+with col_bd:
+    birth_day = st.selectbox("วันที่เกิด", range(1, 32), index=0) 
+with col_bm:
+    birth_month = st.selectbox("เดือนเกิด", range(1, 13), index=0, format_func=lambda x: month_names[x-1]) 
+with col_by:
+    birth_year_be = st.selectbox("ปีเกิด (พ.ศ.)", range(2469, 2570), index=(2530 - 2469)) 
+
+st.write("") # เว้นบรรทัด
+
+# ==========================================
+# ส่วนที่ 2: ข้อมูลวันที่เริ่มป่วย (สำหรับคำนวณอุตุสมุฏฐาน)
+# ==========================================
+st.subheader("2. ข้อมูลวันที่เริ่มป่วย (เพื่อหาอุตุสมุฏฐาน)")
+col_id, col_im, col_iy = st.columns(3)
+with col_id:
+    ill_day = st.selectbox("วันที่เริ่มป่วย", range(1, 32), index=cur_d - 1, key="ill_day") 
+with col_im:
+    ill_month = st.selectbox("เดือนที่เริ่มป่วย", range(1, 13), index=cur_m - 1, format_func=lambda x: month_names[x-1], key="ill_month") 
+with col_iy:
+    ill_year_be = st.selectbox("ปีที่เริ่มป่วย (พ.ศ.)", range(2469, 2570), index=(cur_y_be - 2469), key="ill_year") 
+
+st.write("") # เว้นบรรทัด
 
 # สร้างโครงสร้างเก็บวันที่แบบไม่ต้องเช็คอธิกสุรทินล่วงหน้า เพื่อส่งเข้าฟังก์ชันของคุณ
 ThaiDate = namedtuple("ThaiDate", ["year", "month", "day"])
 
-if st.button("ประมวลผล", type="primary"):
+# ==========================================
+# ส่วนประมวลผล
+# ==========================================
+if st.button("ประมวลผลข้อมูล", type="primary", use_container_width=True):
     try:
-        req_date = ThaiDate(selected_year_be, selected_month, selected_day)
+        # เตรียมตัวแปรวันที่ 2 ชุด
+        req_birth = ThaiDate(birth_year_be, birth_month, birth_day)
+        req_ill = ThaiDate(ill_year_be, ill_month, ill_day)
         
-        thai_text_calc = thl_date(req_date, thai_number=False, thai_zodiac=True, era=0)
-        thai_text_display = thl_date(req_date, thai_number=True, thai_zodiac=True, era=0)
+        # คำนวณวันจันทรคติ (วันเกิด)
+        thai_text_birth_calc = thl_date(req_birth, thai_number=False, thai_zodiac=True, era=0)
+        thai_text_birth_disp = thl_date(req_birth, thai_number=True, thai_zodiac=True, era=0)
         
-        if thai_text_calc == "ไม่รองรับ":
-            st.error("ระบบรองรับเฉพาะผู้เกิดปี พ.ศ. 2469 - 2569 เท่านั้น")
+        # คำนวณวันจันทรคติ (วันป่วย)
+        thai_text_ill_calc = thl_date(req_ill, thai_number=False, thai_zodiac=True, era=0)
+        thai_text_ill_disp = thl_date(req_ill, thai_number=True, thai_zodiac=True, era=0)
+        
+        if thai_text_birth_calc == "ไม่รองรับ" or thai_text_ill_calc == "ไม่รองรับ":
+            st.error("ระบบรองรับเฉพาะปี พ.ศ. 2469 - 2569 เท่านั้น")
         else:
-            parts = thai_text_calc.split()
-            phase_str = parts[0]
-            day_str = parts[1]
-            month_int = int(parts[4])
+            # ดึงข้อมูลวันเกิดไปหาธาตุเจ้าเรือน
+            parts_birth = thai_text_birth_calc.split()
+            b_phase_str = parts_birth[0]
+            b_month_int = int(parts_birth[4])
+            element, _ = get_thai_element(b_month_int, b_phase_str)
             
-            # 1. คำนวณธาตุเจ้าเรือนกำเนิด
-            element, calc_month = get_thai_element(month_int, phase_str)
+            # ดึงข้อมูลวันป่วยไปหาอุตุสมุฏฐาน
+            parts_ill = thai_text_ill_calc.split()
+            i_phase_str = parts_ill[0]
+            i_month_int = int(parts_ill[4])
+            utu = get_utu_samutthan(i_month_int, i_phase_str)
             
-            # 2. คำนวณอุตุสมุฏฐาน (ฤดูกาลที่เกิดโรค)
-            utu = get_utu_samutthan(month_int, phase_str)
-            
+            # --- ส่วนแสดงผลลัพธ์ ---
             st.divider()
-            st.subheader("ผลการคำนวณ")
+            st.subheader("ผลการวิเคราะห์")
             
-            # แสดงวันทางจันทรคติ
-            st.info(f"**วันทางจันทรคติ:**\n\n{thai_text_display}")
-            
-            # แสดงธาตุเจ้าเรือน และ อุตุสมุฏฐาน แบ่งเป็น 2 คอลัมน์
-            col1, col2 = st.columns(2)
-            with col1:
+            # กล่องผลลัพธ์วันเกิด
+            with st.container(border=True):
+                st.markdown(f"**🌿 ข้อมูลกำเนิด (วันเกิด):** {thai_text_birth_disp}")
                 st.success(f"**ธาตุเจ้าเรือนกำเนิด:**\n\n{element}")
-            with col2:
+                
+            # กล่องผลลัพธ์วันป่วย
+            with st.container(border=True):
+                st.markdown(f"**🤒 ข้อมูลการป่วย (วันเกิดโรค):** {thai_text_ill_disp}")
                 st.warning(f"**อุตุสมุฏฐาน (ฤดูกาลที่เกิดโรค):**\n\n{utu}")
                 
     except ValueError:
-        st.error(f"วันที่ {selected_day} {month_names[selected_month-1]} พ.ศ. {selected_year_be} ไม่มีอยู่จริงในปฏิทิน กรุณาตรวจสอบอีกครั้ง")
+        st.error("วันที่คุณเลือกไม่มีอยู่จริงในปฏิทิน (เช่น 31 กุมภาพันธ์) กรุณาตรวจสอบอีกครั้ง")
     except Exception as e:
         st.error(f"เกิดข้อผิดพลาด: {str(e)}")
-
