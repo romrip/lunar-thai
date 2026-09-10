@@ -10,6 +10,13 @@ def xl_mod(a, b):
     return a - b * math.floor(a / b)
 
 def athika_mas(i_year):
+    # --- 1. บังคับค่าปีอธิกมาสเฉพาะช่วงปี พ.ศ. 2527 - 2530 (ค.ศ. 1984 - 1987) ---
+    if i_year == 1984: return False  # พ.ศ. 2527 (ปีปกติ)
+    if i_year == 1985: return True   # พ.ศ. 2528 (อธิกมาส - เดือน 8 สองหน)
+    if i_year == 1986: return False  # พ.ศ. 2529 (ปีปกติ)
+    if i_year == 1987: return False  # พ.ศ. 2530 (อธิกวาร - ไปกำหนดในฟังก์ชันถัดไป)
+    
+    # --- 2. สมการเดิมสำหรับปีอื่นๆ ทั้งหมด ---
     athi = xl_mod((i_year - 78) - 0.45222, 2.7118886)
     return athi < 1
 
@@ -88,10 +95,20 @@ def deviation(i_year):
     return current_dev
 
 def athika_var(i_year):
-    if athika_mas(i_year): return False
+    # --- 1. บังคับค่าปีอธิกวารเฉพาะช่วงปี พ.ศ. 2527 - 2530 (ค.ศ. 1984 - 1987) ---
+    if i_year == 1984: return False  # พ.ศ. 2527 (ปีปกติ)
+    if i_year == 1985: return False  # พ.ศ. 2528 (อธิกมาส ไม่เป็นอธิกวาร)
+    if i_year == 1986: return False  # พ.ศ. 2529 (ปีปกติ)
+    if i_year == 1987: return True   # พ.ศ. 2530 (อธิกวาร - เดือน 7 มี 30 วัน)
+    
+    # --- 2. สมการเดิมสำหรับปีอื่นๆ ทั้งหมด ---
+    if athika_mas(i_year): 
+        return False
     else:
-        if athika_mas(i_year + 1): cutoff = 1.69501433191599e-02
-        else: cutoff = -1.42223099315486e-02
+        if athika_mas(i_year + 1): 
+            cutoff = 1.69501433191599e-02
+        else: 
+            cutoff = -1.42223099315486e-02
         return deviation(i_year) > cutoff
 
 s_dates = [
