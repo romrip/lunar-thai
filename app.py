@@ -261,9 +261,9 @@ month_names = ["มกราคม", "กุมภาพันธ์", "มี�
 
 col_d, col_m, col_y = st.columns(3)
 with col_d:
-    selected_day = st.selectbox("วันที่", range(1, 32), index=4) 
+    selected_day = st.selectbox("วันที่", range(1, 32), index=0) 
 with col_m:
-    selected_month = st.selectbox("เดือน", range(1, 13), index=5, format_func=lambda x: month_names[x-1]) 
+    selected_month = st.selectbox("เดือน", range(1, 13), index=0, format_func=lambda x: month_names[x-1]) 
 with col_y:
     selected_year_be = st.selectbox("ปีเกิด (พ.ศ.)", range(2469, 2570), index=(2527-2469)) 
 
