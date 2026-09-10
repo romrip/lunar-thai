@@ -248,6 +248,21 @@ def get_thai_element(lunar_month: int, phase_str: str):
         
     return element, calc_month
 
+def get_utu_samutthan(lunar_month: int, phase_str: str):
+    phase = phase_str.strip()
+    
+    # แปลงเดือน 88 (เดือน 8 สองหน) ให้เป็นเดือน 8 ตามปกติเพื่อเช็คเงื่อนไข
+    m = 8 if lunar_month == 88 else lunar_month
+    
+    if (m == 4 and phase == "แรม") or (m in [5, 6, 7]) or (m == 8 and phase == "ขึ้น"):
+        return "คิมหันตฤดู (เตโช)"
+    elif (m == 8 and phase == "แรม") or (m in [9, 10, 11]) or (m == 12 and phase == "ขึ้น"):
+        return "วสันตฤดู (วาโย)"
+    elif (m == 12 and phase == "แรม") or (m in [1, 2, 3]) or (m == 4 and phase == "ขึ้น"):
+        return "เหมันตฤดู (อาโป)"
+    else:
+        return "ไม่ทราบฤดู"
+
 # ==========================================
 # 3. ส่วนสร้างหน้าเว็บด้วย Streamlit (แก้บั๊ก พ.ศ. ซ้ำซ้อน)
 # ==========================================
@@ -270,9 +285,8 @@ with col_y:
 # สร้างโครงสร้างเก็บวันที่แบบไม่ต้องเช็คอธิกสุรทินล่วงหน้า เพื่อส่งเข้าฟังก์ชันของคุณ
 ThaiDate = namedtuple("ThaiDate", ["year", "month", "day"])
 
-if st.button("ประมวลผลธาตุเจ้าเรือน", type="primary"):
+if st.button("ประมวลผล", type="primary"):
     try:
-        # ส่งค่าปี พ.ศ. ตรงๆ เข้าไปได้เลย ฟังก์ชันของคุณจะนำไปจัดการลบ 543 เอง
         req_date = ThaiDate(selected_year_be, selected_month, selected_day)
         
         thai_text_calc = thl_date(req_date, thai_number=False, thai_zodiac=True, era=0)
@@ -286,19 +300,27 @@ if st.button("ประมวลผลธาตุเจ้าเรือน", 
             day_str = parts[1]
             month_int = int(parts[4])
             
+            # 1. คำนวณธาตุเจ้าเรือนกำเนิด
             element, calc_month = get_thai_element(month_int, phase_str)
             
-            st.divider()
-            st.subheader("ผลการคำนวณของคุณ")
+            # 2. คำนวณอุตุสมุฏฐาน (ฤดูกาลที่เกิดโรค)
+            utu = get_utu_samutthan(month_int, phase_str)
             
+            st.divider()
+            st.subheader("ผลการคำนวณ")
+            
+            # แสดงวันทางจันทรคติ
+            st.info(f"**วันทางจันทรคติ:**\n\n{thai_text_display}")
+            
+            # แสดงธาตุเจ้าเรือน และ อุตุสมุฏฐาน แบ่งเป็น 2 คอลัมน์
             col1, col2 = st.columns(2)
             with col1:
-                st.info(f"**วันเกิดทางจันทรคติ:**\n\n{thai_text_display}")
+                st.success(f"**ธาตุเจ้าเรือนกำเนิด:**\n\n{element}")
             with col2:
-                st.success(f"**ธาตุเจ้าเรือน:**\n\n{element}")
+                st.warning(f"**อุตุสมุฏฐาน (ฤดูกาลที่เกิดโรค):**\n\n{utu}")
                 
     except ValueError:
-        # จะแจ้งเตือนตรงนี้ถ้าผู้ใช้จงใจเลือกวันที่ไม่มีจริง (เช่น 31 ก.พ.)
         st.error(f"วันที่ {selected_day} {month_names[selected_month-1]} พ.ศ. {selected_year_be} ไม่มีอยู่จริงในปฏิทิน กรุณาตรวจสอบอีกครั้ง")
     except Exception as e:
         st.error(f"เกิดข้อผิดพลาด: {str(e)}")
+
