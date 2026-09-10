@@ -231,37 +231,46 @@ def get_thai_element(lunar_month: int, phase_str: str):
     return element, calc_month
 
 # ==========================================
-# 3. ส่วนสร้างหน้าเว็บด้วย Streamlit
+# 3. ส่วนสร้างหน้าเว็บด้วย Streamlit (เลือกปี พ.ศ.)
 # ==========================================
 st.set_page_config(page_title="คำนวณธาตุเจ้าเรือน", page_icon="🌿")
 
 st.title("โปรแกรมคำนวณธาตุเจ้าเรือน")
-st.write("ระบบแปลงวันเกิดสากลเป็นปฏิทินจันทรคติไทย พร้อมคำนวณธาตุเจ้าเรือน")
+st.write("ระบบแปลงวันเกิดเป็นปฏิทินจันทรคติไทย")
 
-selected_date = st.date_input(
-    "เลือกวัน/เดือน/ปีเกิด (ค.ศ.)", 
-    value=date(1984, 6, 5),
-    min_value=date(1903, 1, 1),
-    max_value=date(2460, 12, 31)
-)
+# สร้างตัวเลือก เดือน และ ปี พ.ศ.
+month_names = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", 
+               "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"]
+
+# แบ่งกล่องเลือกเป็น 3 คอลัมน์
+col_d, col_m, col_y = st.columns(3)
+with col_d:
+    selected_day = st.selectbox("วันที่", range(1, 32), index=4) 
+with col_m:
+    selected_month = st.selectbox("เดือน", range(1, 13), index=5, format_func=lambda x: month_names[x-1]) 
+with col_y:
+    # ปรับ range ถึง 2570 เพื่อให้แสดงผล พ.ศ. 2569 เป็นปีสุดท้าย
+    selected_year_be = st.selectbox("ปีเกิด (พ.ศ.)", range(2469, 2570), index=(2527-2469)) 
 
 if st.button("ประมวลผลธาตุเจ้าเรือน", type="primary"):
     try:
-        year_be = selected_date.year + 543
-        req_date = datetime(year_be, selected_date.month, selected_date.day)
+        # แปลง พ.ศ. กลับเป็น ค.ศ. เฉพาะตอนโยนเข้าฟังก์ชัน datetime เพื่อไม่ให้ระบบ Error
+        year_ce = selected_year_be - 543
+        req_date = datetime(year_ce, selected_month, selected_day)
         
+        # ส่งเข้าฟังก์ชันปฏิทิน
         thai_text_calc = thl_date(req_date, thai_number=False, thai_zodiac=True, era=0)
         thai_text_display = thl_date(req_date, thai_number=True, thai_zodiac=True, era=0)
         
         if thai_text_calc == "ไม่รองรับ":
-            st.error("ปีเกิดไม่อยู่ในช่วงที่ระบบรองรับ (พ.ศ. 2446 - 3003)")
+            st.error("ระบบรองรับเฉพาะผู้เกิดปี พ.ศ. 2469 - 2569 เท่านั้น")
         else:
             parts = thai_text_calc.split()
             phase_str = parts[0]
             day_str = parts[1]
             month_int = int(parts[4])
             
-            # รับค่าธาตุ และ เดือนที่ใช้คำนวณ
+            # รับค่าธาตุ และ เดือนที่ใช้คำนวณ (+3 เดือน)
             element, calc_month = get_thai_element(month_int, phase_str)
             
             st.divider()
@@ -271,8 +280,9 @@ if st.button("ประมวลผลธาตุเจ้าเรือน", 
             with col1:
                 st.info(f"**วันเกิดทางจันทรคติ:**\n\n{thai_text_display}")
             with col2:
-                # แสดงข้อความกำกับว่าคิดจากเดือนอะไร เพื่อให้ตรวจสอบได้ง่าย
                 st.success(f"**ธาตุเจ้าเรือนกำเนิด:**\n\n{element}\n\n*(คิดจาก {phase_str} {day_str} ค่ำ เดือน {calc_month})*")
                 
+    except ValueError:
+        st.error(f"วันที่ {selected_day} {month_names[selected_month-1]} {selected_year_be} ไม่มีอยู่จริงในปฏิทิน กรุณาตรวจสอบอีกครั้ง")
     except Exception as e:
         st.error(f"เกิดข้อผิดพลาด: {str(e)}")
