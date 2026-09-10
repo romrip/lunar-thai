@@ -15,8 +15,7 @@ def athika_mas(i_year):
     if i_year == 1985: return True   # พ.ศ. 2528 (อธิกมาส - เดือน 8 สองหน)
     if i_year == 1986: return False  # พ.ศ. 2529 (ปีปกติ)
     if i_year == 1987: return False  # พ.ศ. 2530 (อธิกวาร - ไปกำหนดในฟังก์ชันถัดไป)
-    if i_year == 2026: return False  # พ.ศ. 2569 (แก้บั๊กเดือน 9 คลาดเคลื่อน)
-    
+        
     # --- 2. สมการเดิมสำหรับปีอื่นๆ ทั้งหมด ---
     athi = xl_mod((i_year - 78) - 0.45222, 2.7118886)
     return athi < 1
@@ -101,8 +100,7 @@ def athika_var(i_year):
     if i_year == 1985: return False  # พ.ศ. 2528 (อธิกมาส ไม่เป็นอธิกวาร)
     if i_year == 1986: return False  # พ.ศ. 2529 (ปีปกติ)
     if i_year == 1987: return True   # พ.ศ. 2530 (อธิกวาร - เดือน 7 มี 30 วัน)
-    if i_year == 2026: return False  # พ.ศ. 2569
-    
+        
     # --- 2. สมการเดิมสำหรับปีอื่นๆ ทั้งหมด ---
     if athika_mas(i_year): 
         return False
@@ -204,7 +202,7 @@ def thl_date(i_date, thai_number=False, thai_zodiac=False, era=0, z_option=False
             th_m -= 13
             th_z = 1
         if th_m == 9: th_m = 88
-        elif th_m in [10, 11, 12]: th_m -= 2
+        elif th_m > 9: th_m -= 1
         th_s = "แรม " if dofy > 15 else "ขึ้น "
         dofy = dofy - 15 if dofy > 15 else dofy
 
@@ -353,12 +351,12 @@ if st.button("ประมวลผลข้อมูล", type="primary", use_c
             
             # กล่องผลลัพธ์วันเกิด
             with st.container(border=True):
-                st.markdown(f"**🌿 ข้อมูลกำเนิด (วันเกิด):** {thai_text_birth_disp}")
+                st.markdown(f"**ข้อมูลกำเนิด (วันเกิด):** {thai_text_birth_disp}")
                 st.success(f"**ธาตุเจ้าเรือนกำเนิด:**\n\n{element}")
                 
             # กล่องผลลัพธ์วันป่วย
             with st.container(border=True):
-                st.markdown(f"**🤒 ข้อมูลการป่วย (วันเกิดโรค):** {thai_text_ill_disp}")
+                st.markdown(f"**ข้อมูลการป่วย (วันเกิดโรค):** {thai_text_ill_disp}")
                 st.warning(f"**อุตุสมุฏฐาน (ฤดูกาลที่เกิดโรค):**\n\n{utu}")
                 
     except ValueError:
