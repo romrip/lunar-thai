@@ -203,70 +203,76 @@ def thl_date(i_date, thai_number=False, thai_zodiac=False, era=0, z_option=False
     return result.strip()
 
 # ==========================================
-# 2. ฟังก์ชันหาธาตุเจ้าเรือน
+# 2. ฟังก์ชันหาธาตุเจ้าเรือน (ปรับบวก 3 เดือน)
 # ==========================================
-def get_thai_element(lunar_month: int, phase_str: str) -> str:
+def get_thai_element(lunar_month: int, phase_str: str):
     phase = phase_str.strip()
-    check_month = 8 if lunar_month == 88 else lunar_month
+    
+    # แปลงเดือน 8 สองหน ให้เป็นเดือน 8 ตามปกติ
+    base_month = 8 if lunar_month == 88 else lunar_month
+    
+    # บวก 3 เดือน (นับย้อนไปหาเดือนปฏิสนธิ)
+    calc_month = base_month + 3
+    if calc_month > 12:
+        calc_month -= 12
 
-    if (check_month == 4 and phase == "แรม") or (check_month in [5, 6]) or (check_month == 7 and phase == "ขึ้น"):
-        return "เตโช (ไฟ)"
-    elif (check_month == 7 and phase == "แรม") or (check_month in [8, 9]) or (check_month == 10 and phase == "ขึ้น"):
-        return "วาโย (ลม)"
-    elif (check_month == 10 and phase == "แรม") or (check_month in [11, 12]) or (check_month == 1 and phase == "ขึ้น"):
-        return "อาโป (น้ำ)"
-    elif (check_month == 1 and phase == "แรม") or (check_month in [2, 3]) or (check_month == 4 and phase == "ขึ้น"):
-        return "ปถวี (ดิน)"
-    return "ไม่ทราบธาตุ"
+    # เข้าสูตรหาธาตุโดยใช้เดือนที่บวกแล้ว (calc_month)
+    if (calc_month == 4 and phase == "แรม") or (calc_month in [5, 6]) or (calc_month == 7 and phase == "ขึ้น"):
+        element = "เตโช (ไฟ)"
+    elif (calc_month == 7 and phase == "แรม") or (calc_month in [8, 9]) or (calc_month == 10 and phase == "ขึ้น"):
+        element = "วาโย (ลม)"
+    elif (calc_month == 10 and phase == "แรม") or (calc_month in [11, 12]) or (calc_month == 1 and phase == "ขึ้น"):
+        element = "อาโป (น้ำ)"
+    elif (calc_month == 1 and phase == "แรม") or (calc_month in [2, 3]) or (calc_month == 4 and phase == "ขึ้น"):
+        element = "ปถวี (ดิน)"
+    else:
+        element = "ไม่ทราบธาตุ"
+        
+    return element, calc_month
 
 # ==========================================
 # 3. ส่วนสร้างหน้าเว็บด้วย Streamlit
 # ==========================================
 st.set_page_config(page_title="คำนวณธาตุเจ้าเรือน", page_icon="🌿")
 
-st.title("🌿 โปรแกรมคำนวณธาตุเจ้าเรือน (แพทย์แผนไทย)")
-st.write("ระบบแปลงวันเกิดสากลเป็นปฏิทินจันทรคติไทย พร้อมคำนวณธาตุเจ้าเรือนเกิดตามคัมภีร์สมุฏฐานวินิจฉัย แม่นยำ 100%")
+st.title("โปรแกรมคำนวณธาตุเจ้าเรือน")
+st.write("ระบบแปลงวันเกิดสากลเป็นปฏิทินจันทรคติไทย พร้อมคำนวณธาตุเจ้าเรือน")
 
-# กล่องรับค่าวันที่ (ระบุปีเป็น ค.ศ.)
 selected_date = st.date_input(
     "เลือกวัน/เดือน/ปีเกิด (ค.ศ.)", 
-    value=date(1995, 4, 13),
+    value=date(1984, 6, 5),
     min_value=date(1903, 1, 1),
     max_value=date(2460, 12, 31)
 )
 
 if st.button("ประมวลผลธาตุเจ้าเรือน", type="primary"):
     try:
-        # แปลงวันที่สากล (ค.ศ.) เป็น พ.ศ. เพื่อส่งเข้าฟังก์ชันของคุณ
         year_be = selected_date.year + 543
         req_date = datetime(year_be, selected_date.month, selected_date.day)
         
-        # ค้นหาค่าปฏิทินแบบตัวเลขอารบิกเพื่อนำมาคำนวณง่ายๆ
         thai_text_calc = thl_date(req_date, thai_number=False, thai_zodiac=True, era=0)
-        
-        # ค้นหาค่าปฏิทินแบบเลขไทยเพื่อความสวยงามในการแสดงผล
         thai_text_display = thl_date(req_date, thai_number=True, thai_zodiac=True, era=0)
         
         if thai_text_calc == "ไม่รองรับ":
             st.error("ปีเกิดไม่อยู่ในช่วงที่ระบบรองรับ (พ.ศ. 2446 - 3003)")
         else:
-            # แยกคำเพื่อดึงค่ำและเดือนมาคำนวณ
             parts = thai_text_calc.split()
             phase_str = parts[0]
+            day_str = parts[1]
             month_int = int(parts[4])
             
-            # คำนวณธาตุ
-            element = get_thai_element(month_int, phase_str)
+            # รับค่าธาตุ และ เดือนที่ใช้คำนวณ
+            element, calc_month = get_thai_element(month_int, phase_str)
             
-            # แสดงผลลัพธ์บนหน้าเว็บสวยๆ
             st.divider()
             st.subheader("ผลการคำนวณของคุณ")
             
             col1, col2 = st.columns(2)
             with col1:
-                st.info(f"**วันทางจันทรคติ:**\n\n{thai_text_display}")
+                st.info(f"**วันเกิดทางจันทรคติ:**\n\n{thai_text_display}")
             with col2:
-                st.success(f"**ธาตุเจ้าเรือนกำเนิด:**\n\n{element}")
+                # แสดงข้อความกำกับว่าคิดจากเดือนอะไร เพื่อให้ตรวจสอบได้ง่าย
+                st.success(f"**ธาตุเจ้าเรือนกำเนิด:**\n\n{element}\n\n*(คิดจาก {phase_str} {day_str} ค่ำ เดือน {calc_month})*")
                 
     except Exception as e:
         st.error(f"เกิดข้อผิดพลาด: {str(e)}")
