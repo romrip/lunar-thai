@@ -15,6 +15,7 @@ def athika_mas(i_year):
     if i_year == 1985: return True   # พ.ศ. 2528 (อธิกมาส - เดือน 8 สองหน)
     if i_year == 1986: return False  # พ.ศ. 2529 (ปีปกติ)
     if i_year == 1987: return False  # พ.ศ. 2530 (อธิกวาร - ไปกำหนดในฟังก์ชันถัดไป)
+    if i_year == 2026: return False  # พ.ศ. 2569 (แก้บั๊กเดือน 9 คลาดเคลื่อน)
     
     # --- 2. สมการเดิมสำหรับปีอื่นๆ ทั้งหมด ---
     athi = xl_mod((i_year - 78) - 0.45222, 2.7118886)
@@ -100,6 +101,7 @@ def athika_var(i_year):
     if i_year == 1985: return False  # พ.ศ. 2528 (อธิกมาส ไม่เป็นอธิกวาร)
     if i_year == 1986: return False  # พ.ศ. 2529 (ปีปกติ)
     if i_year == 1987: return True   # พ.ศ. 2530 (อธิกวาร - เดือน 7 มี 30 วัน)
+    if i_year == 2026: return False  # พ.ศ. 2569
     
     # --- 2. สมการเดิมสำหรับปีอื่นๆ ทั้งหมด ---
     if athika_mas(i_year): 
