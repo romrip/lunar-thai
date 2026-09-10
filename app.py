@@ -10,14 +10,8 @@ def xl_mod(a, b):
     return a - b * math.floor(a / b)
 
 def athika_mas(i_year):
-    # รายชื่อปี ค.ศ. ที่มี "เดือน 8 สองหน" (อธิกมาส) ตามปฏิทินหลวงจริง
-    royal_athika_mas = [
-        1926, 1929, 1932, 1934, 1937, 1940, 1943, 1945, 1948, 1951,
-        1954, 1956, 1959, 1962, 1965, 1967, 1970, 1973, 1976, 1978,
-        1981, 1985, 1988, 1991, 1993, 1996, 1999, 2002, 2004, 2007,
-        2010, 2012, 2015, 2018, 2021, 2023, 2026
-    ]
-    return i_year in royal_athika_mas
+    athi = xl_mod((i_year - 78) - 0.45222, 2.7118886)
+    return athi < 1
 
 def l_day_in_year(i_year):
     if athika_mas(i_year): return 384
@@ -94,13 +88,11 @@ def deviation(i_year):
     return current_dev
 
 def athika_var(i_year):
-    # รายชื่อปี ค.ศ. ที่ "เดือน 7 มี 30 วัน" (อธิกวาร) ตามปฏิทินหลวงจริง
-    royal_athika_var = [
-        1928, 1931, 1936, 1939, 1942, 1947, 1950, 1953, 1958, 1961,
-        1964, 1969, 1972, 1975, 1980, 1983, 1987, 1990, 1995, 1998,
-        2001, 2006, 2009, 2014, 2017, 2020, 2025
-    ]
-    return i_year in royal_athika_var
+    if athika_mas(i_year): return False
+    else:
+        if athika_mas(i_year + 1): cutoff = 1.69501433191599e-02
+        else: cutoff = -1.42223099315486e-02
+        return deviation(i_year) > cutoff
 
 s_dates = [
     (1902, datetime(1902, 11, 30)), (1912, datetime(1912, 12, 8)),
