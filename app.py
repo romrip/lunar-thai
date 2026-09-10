@@ -1,6 +1,7 @@
 import streamlit as st
 import math
 from datetime import datetime, timedelta, date
+from collections import namedtuple
 
 # ==========================================
 # 1. ฟังก์ชันคำนวณปฏิทินไทยของคุณ (คงไว้เหมือนเดิมเป๊ะ)
@@ -231,34 +232,32 @@ def get_thai_element(lunar_month: int, phase_str: str):
     return element, calc_month
 
 # ==========================================
-# 3. ส่วนสร้างหน้าเว็บด้วย Streamlit (เลือกปี พ.ศ.)
+# 3. ส่วนสร้างหน้าเว็บด้วย Streamlit (แก้บั๊ก พ.ศ. ซ้ำซ้อน)
 # ==========================================
 st.set_page_config(page_title="คำนวณธาตุเจ้าเรือน", page_icon="🌿")
 
 st.title("โปรแกรมคำนวณธาตุเจ้าเรือน")
 st.write("ระบบแปลงวันเกิดเป็นปฏิทินจันทรคติไทย")
 
-# สร้างตัวเลือก เดือน และ ปี พ.ศ.
 month_names = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", 
                "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"]
 
-# แบ่งกล่องเลือกเป็น 3 คอลัมน์
 col_d, col_m, col_y = st.columns(3)
 with col_d:
     selected_day = st.selectbox("วันที่", range(1, 32), index=4) 
 with col_m:
     selected_month = st.selectbox("เดือน", range(1, 13), index=5, format_func=lambda x: month_names[x-1]) 
 with col_y:
-    # ปรับ range ถึง 2570 เพื่อให้แสดงผล พ.ศ. 2569 เป็นปีสุดท้าย
     selected_year_be = st.selectbox("ปีเกิด (พ.ศ.)", range(2469, 2570), index=(2527-2469)) 
+
+# สร้างโครงสร้างเก็บวันที่แบบไม่ต้องเช็คอธิกสุรทินล่วงหน้า เพื่อส่งเข้าฟังก์ชันของคุณ
+ThaiDate = namedtuple("ThaiDate", ["year", "month", "day"])
 
 if st.button("ประมวลผลธาตุเจ้าเรือน", type="primary"):
     try:
-        # แปลง พ.ศ. กลับเป็น ค.ศ. เฉพาะตอนโยนเข้าฟังก์ชัน datetime เพื่อไม่ให้ระบบ Error
-        year_ce = selected_year_be - 543
-        req_date = datetime(year_ce, selected_month, selected_day)
+        # ส่งค่าปี พ.ศ. ตรงๆ เข้าไปได้เลย ฟังก์ชันของคุณจะนำไปจัดการลบ 543 เอง
+        req_date = ThaiDate(selected_year_be, selected_month, selected_day)
         
-        # ส่งเข้าฟังก์ชันปฏิทิน
         thai_text_calc = thl_date(req_date, thai_number=False, thai_zodiac=True, era=0)
         thai_text_display = thl_date(req_date, thai_number=True, thai_zodiac=True, era=0)
         
@@ -270,7 +269,6 @@ if st.button("ประมวลผลธาตุเจ้าเรือน", 
             day_str = parts[1]
             month_int = int(parts[4])
             
-            # รับค่าธาตุ และ เดือนที่ใช้คำนวณ (+3 เดือน)
             element, calc_month = get_thai_element(month_int, phase_str)
             
             st.divider()
@@ -283,6 +281,7 @@ if st.button("ประมวลผลธาตุเจ้าเรือน", 
                 st.success(f"**ธาตุเจ้าเรือนกำเนิด:**\n\n{element}\n\n*(คิดจาก {phase_str} {day_str} ค่ำ เดือน {calc_month})*")
                 
     except ValueError:
-        st.error(f"วันที่ {selected_day} {month_names[selected_month-1]} {selected_year_be} ไม่มีอยู่จริงในปฏิทิน กรุณาตรวจสอบอีกครั้ง")
+        # จะแจ้งเตือนตรงนี้ถ้าผู้ใช้จงใจเลือกวันที่ไม่มีจริง (เช่น 31 ก.พ.)
+        st.error(f"วันที่ {selected_day} {month_names[selected_month-1]} พ.ศ. {selected_year_be} ไม่มีอยู่จริงในปฏิทิน กรุณาตรวจสอบอีกครั้ง")
     except Exception as e:
         st.error(f"เกิดข้อผิดพลาด: {str(e)}")
