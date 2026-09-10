@@ -295,7 +295,7 @@ if st.button("ประมวลผลธาตุเจ้าเรือน", 
             with col1:
                 st.info(f"**วันเกิดทางจันทรคติ:**\n\n{thai_text_display}")
             with col2:
-                st.success(f"**ธาตุเจ้าเรือน:**\n\n{element}*")
+                st.success(f"**ธาตุเจ้าเรือน:**\n\n{element}")
                 
     except ValueError:
         # จะแจ้งเตือนตรงนี้ถ้าผู้ใช้จงใจเลือกวันที่ไม่มีจริง (เช่น 31 ก.พ.)
