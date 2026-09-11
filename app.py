@@ -236,13 +236,13 @@ def get_thai_element(lunar_month: int, phase_str: str):
 
     # เข้าสูตรหาธาตุโดยใช้เดือนที่บวกแล้ว (calc_month)
     if (calc_month == 4 and phase == "แรม") or (calc_month in [5, 6]) or (calc_month == 7 and phase == "ขึ้น"):
-        element = "เตโช (ไฟ)"
+        element = "เตโช"
     elif (calc_month == 7 and phase == "แรม") or (calc_month in [8, 9]) or (calc_month == 10 and phase == "ขึ้น"):
-        element = "วาโย (ลม)"
+        element = "วาโย"
     elif (calc_month == 10 and phase == "แรม") or (calc_month in [11, 12]) or (calc_month == 1 and phase == "ขึ้น"):
-        element = "อาโป (น้ำ)"
+        element = "อาโป"
     elif (calc_month == 1 and phase == "แรม") or (calc_month in [2, 3]) or (calc_month == 4 and phase == "ขึ้น"):
-        element = "ปถวี (ดิน)"
+        element = "ปถวี"
     else:
         element = "ไม่ทราบธาตุ"
         
@@ -266,11 +266,20 @@ def get_utu_samutthan(lunar_month: int, phase_str: str):
 def get_ayu_samutthan(age: int):
     # อายุสมุฏฐาน: คำนวณตามช่วงอายุ
     if age < 16:
-        return "อาโป (น้ำ)"
+        return "อาโป"
     elif 16 <= age < 32:
-        return "เตโช (ไฟ)"
+        return "เตโช"
     else:
-        return "วาโย (ลม)"
+        return "วาโย"
+
+def get_kala_samutthan(time_index: int):
+    # index 0, 3 = อาโป | 1, 4 = เตโช | 2, 5 = วาโย
+    if time_index in [0, 3]:
+        return "อาโป"
+    elif time_index in [1, 4]:
+        return "เตโช"
+    else:
+        return "วาโย"
 
 # ==========================================
 # 3. ส่วนสร้างหน้าเว็บด้วย Streamlit (แก้บั๊ก พ.ศ. ซ้ำซ้อน)
@@ -306,9 +315,11 @@ with col_by:
 st.write("") # เว้นบรรทัด
 
 # ==========================================
-# ส่วนที่ 2: ข้อมูลวันที่เริ่มป่วย (สำหรับคำนวณอุตุสมุฏฐาน)
+# ส่วนที่ 2: ข้อมูลวันที่เริ่มป่วย (สำหรับคำนวณอุตุและกาลสมุฏฐาน)
 # ==========================================
-st.subheader("2. ข้อมูลวันที่เริ่มป่วย (เพื่อหาอุตุสมุฏฐาน)")
+st.subheader("2. ข้อมูลวันที่เริ่มป่วย (เพื่อหาอุตุสมุฏฐาน และ กาลสมุฏฐาน)")
+
+# แถวแรก: เลือกวัน เดือน ปี
 col_id, col_im, col_iy = st.columns(3)
 with col_id:
     ill_day = st.selectbox("วันที่เริ่มป่วย", range(1, 32), index=cur_d - 1, key="ill_day") 
@@ -316,6 +327,17 @@ with col_im:
     ill_month = st.selectbox("เดือนที่เริ่มป่วย", range(1, 13), index=cur_m - 1, format_func=lambda x: month_names[x-1], key="ill_month") 
 with col_iy:
     ill_year_be = st.selectbox("ปีที่เริ่มป่วย (พ.ศ.)", range(2469, 2570), index=(cur_y_be - 2469), key="ill_year") 
+
+# แถวที่สอง: เลือกช่วงเวลาเกิดโรค
+time_ranges = [
+    "06:00 - 09:59 น. (เช้า)",
+    "10:00 - 13:59 น. (สาย-บ่าย)",
+    "14:00 - 17:59 น. (บ่าย-เย็น)",
+    "18:00 - 21:59 น. (ค่ำ)",
+    "22:00 - 01:59 น. (ดึก)",
+    "02:00 - 05:59 น. (เช้ามืด)"
+]
+ill_time_index = st.selectbox("เวลาที่เริ่มมีอาการป่วย (กาลสมุฏฐาน)", range(6), format_func=lambda x: time_ranges[x])
 
 st.write("") # เว้นบรรทัด
 
@@ -361,6 +383,9 @@ if st.button("ประมวลผลข้อมูล", type="primary", use_c
             if age < 0: age = 0 # ป้องกันกรณีอายุติดลบ
             
             ayu = get_ayu_samutthan(age)
+
+            # 4. หากาลสมุฏฐาน จาก index ที่เลือก (0-5)
+            kala = get_kala_samutthan(ill_time_index)
             
             # --- แสดงผลลัพธ์ ---
             st.divider()
@@ -369,18 +394,20 @@ if st.button("ประมวลผลข้อมูล", type="primary", use_c
             # กล่องผลลัพธ์ที่ 1: ข้อมูลวันเกิด
             with st.container(border=True):
                 st.markdown(f"**ข้อมูลกำเนิด (วันเกิด):** {thai_text_birth_disp}")
-                st.success(f"**ธาตุเจ้าเรือนปฏิสนธิ:**\n\n{element}")
+                st.success(f"**ธาตุเจ้าเรือนวันปฏิสนธิ:**\n\n{element}")
                 
             # กล่องผลลัพธ์ที่ 2: ข้อมูลการป่วย
             with st.container(border=True):
                 st.markdown(f"**ข้อมูลการป่วย (วันเกิดโรค):** {thai_text_ill_disp}")
                 
-                # แบ่งเป็น 2 คอลัมน์สำหรับ อุตุสมุฏฐาน และ อายุสมุฏฐาน
-                col_u, col_a = st.columns(2)
+                # แบ่งเป็น 3 คอลัมน์สำหรับ อุตุสมุฏฐาน อายุสมุฏฐาน และ กาลสมุฏฐาน
+                col_u, col_a, col_k = st.columns(3)
                 with col_u:
                     st.warning(f"**อุตุสมุฏฐาน (ฤดูที่เกิดโรค):**\n\n{utu}")
                 with col_a:
                     st.info(f"**อายุสมุฏฐาน (ปัจจุบันอายุ {age} ปี):**\n\n{ayu}")
+                with col_k:
+                    st.error(f"**กาลสมุฏฐาน (เวลาที่เกิดโรค):**\n\n{kala}")
                 
     except ValueError:
         st.error("วันที่คุณเลือกไม่มีอยู่จริงในปฏิทิน (เช่น 31 กุมภาพันธ์) กรุณาตรวจสอบอีกครั้ง")
