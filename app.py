@@ -281,6 +281,18 @@ def get_kala_samutthan(time_index: int):
     else:
         return "วาโย"
 
+def get_prathet_samutthan(region: str):
+    if region == "ภาคเหนือ (ที่สูง)":
+        return "เตโช"
+    elif region == "ภาคอีสาน (น้ำกรวดทราย)":
+        return "อาโป"
+    elif region == "ภาคกลาง (ฝนเปือกตม)":
+        return "วาโย"
+    elif region == "ภาคใต้ (น้ำเค็มเปือกตม)":
+        return "ปถวี"
+    else:
+        return "ไม่ระบุ"
+
 # ==========================================
 # 3. ส่วนสร้างหน้าเว็บด้วย Streamlit (แก้บั๊ก พ.ศ. ซ้ำซ้อน)
 # ==========================================
@@ -315,9 +327,9 @@ with col_by:
 st.write("") # เว้นบรรทัด
 
 # ==========================================
-# ส่วนที่ 2: ข้อมูลวันที่เริ่มป่วย (สำหรับคำนวณอุตุและกาลสมุฏฐาน)
+# ส่วนที่ 2: ข้อมูลการเกิดโรค (สำหรับคำนวณ อุตุ, กาล, ประเทศสมุฏฐาน)
 # ==========================================
-st.subheader("2. ข้อมูลวันที่เริ่มป่วย (เพื่อหาอุตุสมุฏฐาน และ กาลสมุฏฐาน)")
+st.subheader("2. ข้อมูลการเกิดโรค (สมุฏฐานทั้ง 4)")
 
 # แถวแรก: เลือกวัน เดือน ปี
 col_id, col_im, col_iy = st.columns(3)
@@ -328,16 +340,28 @@ with col_im:
 with col_iy:
     ill_year_be = st.selectbox("ปีที่เริ่มป่วย (พ.ศ.)", range(2469, 2570), index=(cur_y_be - 2469), key="ill_year") 
 
-# แถวที่สอง: เลือกช่วงเวลาเกิดโรค
-time_ranges = [
-    "06:00 - 09:59 น. (เช้า)",
-    "10:00 - 13:59 น. (สาย-บ่าย)",
-    "14:00 - 17:59 น. (บ่าย-เย็น)",
-    "18:00 - 21:59 น. (ค่ำ)",
-    "22:00 - 01:59 น. (ดึก)",
-    "02:00 - 05:59 น. (เช้ามืด)"
-]
-ill_time_index = st.selectbox("เวลาที่เริ่มมีอาการป่วย (กาลสมุฏฐาน)", range(6), format_func=lambda x: time_ranges[x])
+# แถวที่สอง: เลือกเวลา และ ภูมิภาค
+col_t, col_p = st.columns(2)
+with col_t:
+    time_ranges = [
+        "06:00 - 09:59 น. (เช้า)",
+        "10:00 - 13:59 น. (สาย-บ่าย)",
+        "14:00 - 17:59 น. (บ่าย-เย็น)",
+        "18:00 - 21:59 น. (ค่ำ)",
+        "22:00 - 01:59 น. (ดึก)",
+        "02:00 - 05:59 น. (เช้ามืด)"
+    ]
+    ill_time_index = st.selectbox("เวลาที่เริ่มป่วย (กาลสมุฏฐาน)", range(6), format_func=lambda x: time_ranges[x])
+
+with col_p:
+    # อัปเดตชื่อตัวเลือกให้ตรงกับในฟังก์ชัน
+    regions = [
+        "ภาคเหนือ (ที่สูง)", 
+        "ภาคกลาง (ฝนเปือกตม)", 
+        "ภาคอีสาน (น้ำกรวดทราย)", 
+        "ภาคใต้ (น้ำเค็มเปือกตม)"
+    ]
+    ill_region = st.selectbox("ภูมิภาคที่เกิดโรค (ประเทศสมุฏฐาน)", regions)
 
 st.write("") # เว้นบรรทัด
 
@@ -384,8 +408,9 @@ if st.button("ประมวลผลข้อมูล", type="primary", use_c
             
             ayu = get_ayu_samutthan(age)
 
-            # 4. หากาลสมุฏฐาน จาก index ที่เลือก (0-5)
+            # 4. หากาลสมุฏฐาน และ ประเทศสมุฏฐาน
             kala = get_kala_samutthan(ill_time_index)
+            prathet = get_prathet_samutthan(ill_region)
             
             # --- แสดงผลลัพธ์ ---
             st.divider()
@@ -396,18 +421,23 @@ if st.button("ประมวลผลข้อมูล", type="primary", use_c
                 st.markdown(f"**ข้อมูลกำเนิด (วันเกิด):** {thai_text_birth_disp}")
                 st.success(f"**ธาตุเจ้าเรือนวันปฏิสนธิ:**\n\n{element}")
                 
-            # กล่องผลลัพธ์ที่ 2: ข้อมูลการป่วย
+            # กล่องผลลัพธ์ที่ 2: ข้อมูลการป่วย (แสดงสมุฏฐานทั้ง 4 แบบ 2x2)
             with st.container(border=True):
-                st.markdown(f"**ข้อมูลการป่วย (วันเกิดโรค):** {thai_text_ill_disp}")
+                st.markdown(f"**ข้อมูลการป่วย:** {thai_text_ill_disp} | เวลา: {time_ranges[ill_time_index][:13]} | พื้นที่: {ill_region}")
                 
-                # แบ่งเป็น 3 คอลัมน์สำหรับ อุตุสมุฏฐาน อายุสมุฏฐาน และ กาลสมุฏฐาน
-                col_u, col_a, col_k = st.columns(3)
-                with col_u:
-                    st.warning(f"**อุตุสมุฏฐาน (ฤดูที่เกิดโรค):**\n\n{utu}")
-                with col_a:
-                    st.info(f"**อายุสมุฏฐาน (ปัจจุบันอายุ {age} ปี):**\n\n{ayu}")
-                with col_k:
-                    st.error(f"**กาลสมุฏฐาน (เวลาที่เกิดโรค):**\n\n{kala}")
+                # แถวที่ 1 (อุตุ กับ อายุ)
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.warning(f"**อุตุสมุฏฐาน (ฤดู):**\n\n{utu}")
+                with col2:
+                    st.info(f"**อายุสมุฏฐาน (อายุ {age} ปี):**\n\n{ayu}")
+                    
+                # แถวที่ 2 (กาล กับ ประเทศ)
+                col3, col4 = st.columns(2)
+                with col3:
+                    st.error(f"**กาลสมุฏฐาน (เวลา):**\n\n{kala}")
+                with col4:
+                    st.success(f"**ประเทศสมุฏฐาน (พื้นที่):**\n\n{prathet}")
                 
     except ValueError:
         st.error("วันที่คุณเลือกไม่มีอยู่จริงในปฏิทิน (เช่น 31 กุมภาพันธ์) กรุณาตรวจสอบอีกครั้ง")
