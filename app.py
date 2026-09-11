@@ -263,6 +263,15 @@ def get_utu_samutthan(lunar_month: int, phase_str: str):
     else:
         return "ไม่ทราบฤดู"
 
+def get_ayu_samutthan(age: int):
+    # อายุสมุฏฐาน: คำนวณตามช่วงอายุ
+    if age < 16:
+        return "อาโป (น้ำ)"
+    elif 16 <= age < 32:
+        return "เตโช (ไฟ)"
+    else:
+        return "วาโย (ลม)"
+
 # ==========================================
 # 3. ส่วนสร้างหน้าเว็บด้วย Streamlit (แก้บั๊ก พ.ศ. ซ้ำซ้อน)
 # ==========================================
@@ -318,46 +327,60 @@ ThaiDate = namedtuple("ThaiDate", ["year", "month", "day"])
 # ==========================================
 if st.button("ประมวลผลข้อมูล", type="primary", use_container_width=True):
     try:
-        # เตรียมตัวแปรวันที่ 2 ชุด
+	# เตรียมตัวแปรวันที่ 2 ชุด
         req_birth = ThaiDate(birth_year_be, birth_month, birth_day)
         req_ill = ThaiDate(ill_year_be, ill_month, ill_day)
         
         # คำนวณวันจันทรคติ (วันเกิด)
         thai_text_birth_calc = thl_date(req_birth, thai_number=False, thai_zodiac=True, era=0)
         thai_text_birth_disp = thl_date(req_birth, thai_number=True, thai_zodiac=True, era=0)
-        
-        # คำนวณวันจันทรคติ (วันป่วย)
+	# คำนวณวันจันทรคติ (วันป่วย)
         thai_text_ill_calc = thl_date(req_ill, thai_number=False, thai_zodiac=True, era=0)
         thai_text_ill_disp = thl_date(req_ill, thai_number=True, thai_zodiac=True, era=0)
         
         if thai_text_birth_calc == "ไม่รองรับ" or thai_text_ill_calc == "ไม่รองรับ":
             st.error("ระบบรองรับเฉพาะปี พ.ศ. 2469 - 2569 เท่านั้น")
         else:
-            # ดึงข้อมูลวันเกิดไปหาธาตุเจ้าเรือน
+            # 1. หาธาตุเจ้าเรือนกำเนิด
             parts_birth = thai_text_birth_calc.split()
             b_phase_str = parts_birth[0]
             b_month_int = int(parts_birth[4])
             element, _ = get_thai_element(b_month_int, b_phase_str)
             
-            # ดึงข้อมูลวันป่วยไปหาอุตุสมุฏฐาน
+            # 2. หาอุตุสมุฏฐาน
             parts_ill = thai_text_ill_calc.split()
             i_phase_str = parts_ill[0]
             i_month_int = int(parts_ill[4])
             utu = get_utu_samutthan(i_month_int, i_phase_str)
             
-            # --- ส่วนแสดงผลลัพธ์ ---
+            # 3. คำนวณอายุ (เทียบวันเกิด กับ วันปัจจุบัน) และหาอายุสมุฏฐาน
+            age = cur_y_be - birth_year_be
+            if (cur_m, cur_d) < (birth_month, birth_day):
+                age -= 1
+                
+            if age < 0: age = 0 # ป้องกันกรณีอายุติดลบ
+            
+            ayu = get_ayu_samutthan(age)
+            
+            # --- แสดงผลลัพธ์ ---
             st.divider()
             st.subheader("ผลการวิเคราะห์")
             
-            # กล่องผลลัพธ์วันเกิด
+            # กล่องผลลัพธ์ที่ 1: ข้อมูลวันเกิด
             with st.container(border=True):
                 st.markdown(f"**ข้อมูลกำเนิด (วันเกิด):** {thai_text_birth_disp}")
                 st.success(f"**ธาตุเจ้าเรือนปฏิสนธิ:**\n\n{element}")
                 
-            # กล่องผลลัพธ์วันป่วย
+            # กล่องผลลัพธ์ที่ 2: ข้อมูลการป่วย
             with st.container(border=True):
                 st.markdown(f"**ข้อมูลการป่วย (วันเกิดโรค):** {thai_text_ill_disp}")
-                st.warning(f"**อุตุสมุฏฐาน (ฤดูกาลที่เกิดโรค):**\n\n{utu}")
+                
+                # แบ่งเป็น 2 คอลัมน์สำหรับ อุตุสมุฏฐาน และ อายุสมุฏฐาน
+                col_u, col_a = st.columns(2)
+                with col_u:
+                    st.warning(f"**อุตุสมุฏฐาน (ฤดูที่เกิดโรค):**\n\n{utu}")
+                with col_a:
+                    st.info(f"**อายุสมุฏฐาน (ปัจจุบันอายุ {age} ปี):**\n\n{ayu}")
                 
     except ValueError:
         st.error("วันที่คุณเลือกไม่มีอยู่จริงในปฏิทิน (เช่น 31 กุมภาพันธ์) กรุณาตรวจสอบอีกครั้ง")
